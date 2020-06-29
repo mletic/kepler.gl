@@ -95,7 +95,8 @@ export default class ColorRangeSelect extends Component {
     onSelectColorRange: PropTypes.func.isRequired,
     setColorPaletteUI: PropTypes.func.isRequired,
     // optional
-    colorRanges: PropTypes.arrayOf(PropTypes.any)
+    colorRanges: PropTypes.arrayOf(PropTypes.any),
+    colorDomain: PropTypes.arrayOf(PropTypes.any)
   };
 
   static defaultProps = {
@@ -152,6 +153,7 @@ export default class ColorRangeSelect extends Component {
 
   render() {
     const {customPalette, showSketcher, colorRangeConfig} = this.props.colorPaletteUI;
+    const {colorDomain} = this.props;
 
     const filteredColorRanges = this.filteredColorRange(this.props);
 
@@ -172,6 +174,7 @@ export default class ColorRangeSelect extends Component {
         {colorRangeConfig.custom ? (
           <CustomPalette
             customPalette={customPalette}
+            colorDomain={colorDomain}
             showSketcher={showSketcher}
             selected={this.props.selectedColorRange}
             onApply={this.props.onSelectColorRange}

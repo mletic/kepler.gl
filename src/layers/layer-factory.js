@@ -53,7 +53,8 @@ export const DEFAULT_CUSTOM_PALETTE = {
   name: 'color.customPalette',
   type: 'custom',
   category: 'Custom',
-  colors: []
+  colors: [],
+  colorMap: new Map()
 };
 
 /** @type {import('./layer-factory').ColorUI} */

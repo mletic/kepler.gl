@@ -1020,6 +1020,7 @@ export const LayerColorRangeSelector = ({layer, onChange, property = 'colorRange
           setColor: colorRange => onChange({[property]: colorRange})
         }
       ]}
+      colorDomain={layer.config.colorDomain}
       colorUI={layer.config.colorUI[property]}
       setColorUI={newConfig => setColorUI(property, newConfig)}
     />

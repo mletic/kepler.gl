@@ -26,10 +26,12 @@ import {sortableContainer, sortableElement, sortableHandle} from 'react-sortable
 import Portaled from 'components/common/portaled';
 
 import {Button, InlineInput} from 'components/common/styled-components';
-import {VertDots, Trash} from 'components/common/icons';
+import {VertDots, Add, Trash} from 'components/common/icons';
+import {classList} from 'components/common/item-selector/dropdown-list';
 import ColorPalette from './color-palette';
 import CustomPicker from './custom-picker';
 import {arrayMove} from 'utils/data-utils';
+import ItemSelector from 'components/common/item-selector/item-selector';
 
 const dragHandleActive = css`
   .layer__drag-handle {
@@ -65,6 +67,33 @@ const StyledDragHandle = styled.div`
   opacity: 0;
 `;
 
+const StyledInputContainer = styled.div`
+  display: grid;
+  grid-template-columns: auto auto;
+`;
+
+const ItemSelectorContainer = styled.div`
+  width: 100%;
+  margin-left: 12px;
+  margin-right: 12px;
+`;
+
+const StyledAddValue = styled.div`
+  color: ${props => props.theme.textColor};
+  :hover {
+    cursor: pointer;
+    color: ${props => props.theme.subtextColorActive};
+  }
+  svg {
+    margin-right: 4px;
+    margin-bottom: -2px;
+  }
+  text-align: right;
+  margin-right: 12px;
+  font-size: 10px;
+  line-height: 24px;
+`;
+
 const StyledTrash = styled.div`
   color: ${props => props.theme.textColor};
   svg {
@@ -93,6 +122,7 @@ const StyledSwatch = styled.div.attrs({
 })`
   background-color: ${props => props.color};
   width: 32px;
+  min-width: 32px;
   height: 18px;
   display: inline-block;
   :hover {
@@ -137,6 +167,96 @@ const DragHandle = sortableHandle(({className, children}) => (
   <StyledDragHandle className={className}>{children}</StyledDragHandle>
 ));
 
+const ColorDomainHeaderContainer = styled.div`
+  display: grid;
+  grid-template-columns: auto auto;
+  padding: 6px 0px;
+  border-bottom: 1px solid ${props => props.theme.textColor};
+`;
+
+const SelectRest = styled.div`
+  color: ${props => props.theme.textColor};
+  :hover {
+    cursor: pointer;
+    color: ${props => props.theme.subtextColorActive};
+  }
+`;
+
+const ResetColorDomain = styled.div`
+  margin-left: auto;
+  color: ${props => props.theme.textColor};
+  :hover {
+    cursor: pointer;
+    color: ${props => props.theme.subtextColorActive};
+  }
+`;
+const ColorDomainHeaderFactory = (colorMap, setCustomPalette) => {
+  const ColorDomainHeader = () => {
+    return (
+      <ColorDomainHeaderContainer>
+        <SelectRest>Select Rest</SelectRest>
+        <ResetColorDomain
+          onClick={e => {
+            colorMap.clear();
+            setCustomPalette({
+              colorMap
+            });
+          }}
+        >
+          Reset
+        </ResetColorDomain>
+      </ColorDomainHeaderContainer>
+    );
+  };
+
+  return ColorDomainHeader;
+};
+
+const ColorIndicator = styled.div.attrs({
+  className: 'custom-palette__color-indicator'
+})`
+  background-color: ${props => props.color};
+  width: 5px;
+  height: 5px;
+  display: inline-block;
+  margin-right: 4px;
+`;
+
+const ColorDomainListItemFactory = colorMap => {
+  const ColorDomainListItem = ({value, displayOption}) => {
+    let color = 'transparent';
+    const colorMapEl = colorMap.get(value);
+    if (colorMapEl) {
+      color = colorMapEl;
+    }
+
+    return (
+      <span className={classnames(classList.listItemAnchor, {selected: colorMapEl})}>
+        <ColorIndicator color={color} />
+        {displayOption(value)}
+      </span>
+    );
+  };
+
+  return ColorDomainListItem;
+};
+
+const SelectedOptionText = ({colorMap, color}) => {
+  let text = 'Add Value';
+  const selectedItems = [];
+  colorMap.forEach((value, key) => {
+    if (value === color) {
+      selectedItems.push(key);
+    }
+  });
+
+  if (selectedItems.length > 0) {
+    text = selectedItems.length > 1 ? `${selectedItems.length} Selected` : selectedItems[0];
+  }
+
+  return <span>{text}</span>;
+};
+
 class CustomPalette extends Component {
   static propTypes = {
     customPalette: PropTypes.shape({
@@ -145,15 +265,21 @@ class CustomPalette extends Component {
       category: PropTypes.string,
       colors: PropTypes.arrayOf(PropTypes.string)
     }),
+    colorDomain: PropTypes.arrayOf(PropTypes.any),
     setCustomPalette: PropTypes.func,
     showSketcher: PropTypes.oneOfType([PropTypes.bool, PropTypes.number])
   };
 
   state = {
-    isSorting: false
+    isSorting: false,
+    openedIndex: false
   };
 
   root = createRef();
+
+  _onOpenItemSelector(index) {
+    this.setState({openedIndex: index});
+  }
 
   _setColorPaletteUI(colors) {
     this.props.setCustomPalette({
@@ -217,8 +343,50 @@ class CustomPalette extends Component {
     this._setColorPaletteUI(newColors);
   };
 
+  _updateColorMap(color, values) {
+    this.setState({openedIndex: false});
+    const {colorMap} = this.props.customPalette;
+
+    if (values.length) {
+      values.forEach(key => {
+        if (colorMap.has(key)) {
+          const mapEl = colorMap.get(key);
+          if (mapEl !== color) {
+            colorMap.set(key, color);
+          }
+        } else {
+          colorMap.set(key, color);
+        }
+      });
+    } else {
+      colorMap.forEach((value, key) => {
+        if (value === color) {
+          colorMap.delete(key);
+        }
+      });
+    }
+
+    this.props.setCustomPalette({
+      colorMap
+    });
+  }
+
+  _selectedForColors(color) {
+    const {colorMap} = this.props.customPalette;
+    const selectedItems = [];
+
+    colorMap.forEach((value, key) => {
+      if (value === color) {
+        selectedItems.push(key);
+      }
+    });
+
+    return selectedItems;
+  }
+
   render() {
-    const {colors} = this.props.customPalette;
+    const {colors, colorMap} = this.props.customPalette;
+    const {colorDomain, setCustomPalette} = this.props;
 
     return (
       <div className="custom-palette-panel" ref={this.root}>
@@ -239,18 +407,43 @@ class CustomPalette extends Component {
                 <VertDots height="20px" />
               </DragHandle>
               <StyledSwatch color={color} onClick={e => this._onSwatchClick(index, e)} />
-              <StyledInlineInput>
-                <InlineInput
-                  type="text"
-                  className="custom-palette-hex__input"
-                  value={color.toUpperCase()}
-                  onClick={e => {
-                    e.stopPropagation();
-                  }}
-                  onChange={e => this._inputColorHex(index, e)}
-                  id="input-layer-label"
-                />
-              </StyledInlineInput>
+
+              {this.state.openedIndex === index ? (
+                <ItemSelectorContainer>
+                  <ItemSelector
+                    options={colorDomain}
+                    isInlineChicklet={true}
+                    selectedItems={this._selectedForColors(color)}
+                    onChange={e => this._updateColorMap(color, e)}
+                    DropDownLineItemRenderComponent={ColorDomainListItemFactory(colorMap)}
+                    DropdownHeaderComponent={ColorDomainHeaderFactory(colorMap, setCustomPalette)}
+                  />
+                </ItemSelectorContainer>
+              ) : (
+                <StyledInputContainer>
+                  <StyledInlineInput>
+                    <InlineInput
+                      type="text"
+                      className="custom-palette-hex__input"
+                      value={color.toUpperCase()}
+                      onClick={e => {
+                        e.stopPropagation();
+                      }}
+                      onChange={e => this._inputColorHex(index, e)}
+                      id={`input-layer-label-${index}`}
+                    />
+                  </StyledInlineInput>
+                  {Array.isArray(colorDomain) &&
+                  colorDomain.length > 0 &&
+                  typeof colorDomain[0] === 'string' ? (
+                    <StyledAddValue onClick={() => this._onOpenItemSelector(index)}>
+                      <Add height="12px" />
+                      <SelectedOptionText colorMap={colorMap} color={color} />
+                    </StyledAddValue>
+                  ) : null}
+                </StyledInputContainer>
+              )}
+
               <StyledTrash onClick={() => this._onColorDelete(index)}>
                 <Trash className="trashbin" />
               </StyledTrash>

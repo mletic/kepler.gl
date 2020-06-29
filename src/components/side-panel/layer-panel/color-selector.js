@@ -75,6 +75,7 @@ class ColorSelector extends Component {
       showDropdown: PropTypes.oneOfType([PropTypes.bool, PropTypes.number]),
       colorRangeConfig: PropTypes.object
     }),
+    colorDomain: PropTypes.arrayOf(PropTypes.any),
     inputTheme: PropTypes.string,
     disabled: PropTypes.bool,
     setColorUI: PropTypes.func
@@ -132,7 +133,7 @@ class ColorSelector extends Component {
   };
 
   render() {
-    const {colorSets, disabled, inputTheme, colorUI} = this.props;
+    const {colorSets, disabled, inputTheme, colorUI, colorDomain} = this.props;
 
     const editing = this._getEditing();
     const currentEditing = colorSets[editing] && typeof colorSets[editing] === 'object';
@@ -172,6 +173,7 @@ class ColorSelector extends Component {
                 onSelectColorRange={this._onSelectColor}
                 setColorPaletteUI={this.props.setColorUI}
                 colorPaletteUI={colorUI}
+                colorDomain={colorDomain}
               />
             ) : (
               <SingleColorPalette

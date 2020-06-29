@@ -640,6 +640,9 @@ const dropdownScrollBar = css`
 const dropdownListAnchor = css`
   color: ${props => props.theme.selectColor};
   padding-left: 3px;
+  &.selected {
+    color: ${props => props.theme.subtextColorActive};
+  }
 `;
 
 const dropdownListSize = css`
